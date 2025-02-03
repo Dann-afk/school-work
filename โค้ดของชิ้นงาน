@@ -1,0 +1,88 @@
+// ก็อปโค้ดด้านล่างเท่านั้นลงบน Arduino IDE
+
+#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
+#include <ESP32Servo.h>
+
+// เปลี่ยนตามสิ่งที่ท่านมี
+const char* ssid = "ชื่อWiFiของสถานที้ท่าน";
+const char* password = "ใส่รหัสWiFi";
+
+// สร้างเสิร์ฟบนพอร์ท 80
+AsyncWebServer server(80);
+
+// แปลเซอร์โว
+Servo myServo;
+int servoPin = 15;  // เปลี่ยนหากท่านไม่ได้เสียบที่สาย GPIO 15 หรือตามบนบอร์ด ESP32 D15
+
+// คำสั่งสร้างเว็บ เปิด-ปิด ตัวชิ้นงาน
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Switch Presser</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        h2 { color: #333; }
+        .button { display: inline-block; padding: 15px 30px; font-size: 20px; margin: 10px;
+                  color: white; border: none; cursor: pointer; border-radius: 5px; }
+        .on { background-color: #28a745; }
+        .off { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h2>สวิตช์เปิดปิดไฟ ESP32</h2>
+    <button class="button on" onclick="fetch('/control?switch=ON')">เปิด</button>
+    <button class="button off" onclick="fetch('/control?switch=OFF')">ปิด</button>
+</body>
+</html>
+)rawliteral";
+
+void setup() {
+    Serial.begin(115200);
+    
+    // เชื่อมต่อ WiFi
+    WiFi.begin(ssid, password);
+    Serial.print("กำลังเชื่อมต่อ WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("\nเชื่อมต่อ WiFi เสร็จสิ้น!");
+    Serial.print("IP Address ของ ESP32: ให้เสิร์ช http://<ESP32_IP>/ ลงบน Browser ของท่าน. เปลี่ยน <ESP32_IP> เป็น IP Address ที่ได้มาจาก Serial Monitor ซึ่งคือเลขด้านหน้า: ");
+    Serial.println(WiFi.localIP());
+
+    // ตั้งค่าเซอร์โว
+    myServo.attach(servoPin);
+    myServo.write(0);  // จุดเริ่มต้น (ไม่ได้ทำงาน)
+
+    // 
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/html", index_html);
+    });
+
+    // รับข้อมูล
+    server.on("/control", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (request->hasParam("switch")) {
+            String switchState = request->getParam("switch")->value();
+
+            if (switchState == "ON") {
+                myServo.write(90);  // สามารถเปลี่ยนได้หากอยากเปลี่ยนองศา
+                Serial.println("สวิตช์เปิด - เซอร์โวอยู่ที่ 90°");
+            } else if (switchState == "OFF") {
+                myServo.write(0);   // หมุนเซอร์โวกลับจุดเริ่มต้น
+                Serial.println("สวิตช์เปิด - เซอร์โวอยู่ที่ 0°");
+            }
+            request->send(200, "text/plain", "OK");
+        } else {
+            request->send(400, "text/plain", "Invalid Request");
+        }
+    });
+
+    // เริ่มเว็บสำหรับเปิดปิดตัวชิ้นงาน
+    server.begin();
+}
+
+void loop() {
+    // ไม่ต้องลูป
+}
