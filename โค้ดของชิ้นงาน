@@ -5,8 +5,8 @@
 #include <ESP32Servo.h>
 
 // เปลี่ยนตามสิ่งที่ท่านมี
-const char* ssid = "ชื่อWiFiของสถานที้ท่าน";
-const char* password = "ใส่รหัสWiFi";
+const char* ssid = "WiFi ของท่าน";
+const char* password = "รหัสผ่าน WiFi";
 
 // สร้างเสิร์ฟบนพอร์ท 80
 AsyncWebServer server(80);
@@ -31,9 +31,9 @@ const char index_html[] PROGMEM = R"rawliteral(
     </style>
 </head>
 <body>
-    <h2>สวิตช์เปิดปิดไฟ ESP32</h2>
-    <button class="button on" onclick="fetch('/control?switch=ON')">เปิด</button>
-    <button class="button off" onclick="fetch('/control?switch=OFF')">ปิด</button>
+    <h2>ESP32 Light Switch Presser</h2>
+    <button class="button on" onclick="fetch('/control?switch=ON')">Turn On</button>
+    <button class="button off" onclick="fetch('/control?switch=OFF')">Turn Off</button>
 </body>
 </html>
 )rawliteral";
@@ -68,10 +68,10 @@ void setup() {
 
             if (switchState == "ON") {
                 myServo.write(90);  // สามารถเปลี่ยนได้หากอยากเปลี่ยนองศา
-                Serial.println("สวิตช์เปิด - เซอร์โวอยู่ที่ 90°");
+                Serial.println("Switch ON - Servo 90°");
             } else if (switchState == "OFF") {
                 myServo.write(0);   // หมุนเซอร์โวกลับจุดเริ่มต้น
-                Serial.println("สวิตช์เปิด - เซอร์โวอยู่ที่ 0°");
+                Serial.println("Switch OFF - Servo at 0°");
             }
             request->send(200, "text/plain", "OK");
         } else {
